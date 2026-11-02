@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prenotazioni Disegni</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom Scrollbar for Dashboard */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between antialiased">
+
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('public')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-palette text-lg"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-lg text-slate-900 tracking-tight block leading-tight">Prenotazioni Disegni</span>
+                    <span class="text-xs text-slate-500 block">Commissioni & Illustrazioni</span>
+                </div>
+            </div>
+
+            <!-- Navigation Controls -->
+            <nav class="flex items-center space-x-2">
+                <button id="navPublicBtn" onclick="switchTab('public')" class="px-3 py-2 text-sm font-medium rounded-lg transition-colors text-brand-600 bg-brand-50 flex items-center gap-2">
+                    <i class="fa-solid fa-paint-brush"></i>
+                    <span>Richiedi Disegno</span>
+                </button>
+                <button id="navAdminBtn" onclick="switchTab('admin')" class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-lock text-slate-400"></i>
+                    <span>Area Artista</span>
+                    <span id="badgePendingCount" class="hidden bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">0</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- 1. PUBLIC SECTION (Client Request Form) -->
+        <section id="publicSection" class="max-w-2xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+                <!-- Banner Top -->
+                <div class="bg-gradient-to-r from-brand-900 via-brand-700 to-sky-500 p-6 sm:p-8 text-white relative">
+                    <div class="relative z-10">
+                        <h1 class="text-2xl sm:text-3xl font-bold">Prenota il tuo Disegno</h1>
+                        <p class="text-brand-100 mt-2 text-sm sm:text-base">Compila il modulo per richiedere un'illustrazione su misura. Specifica i dettagli del soggetto e la data di consegna desiderata.</p>
+                    </div>
+                    <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+                </div>
+
+                <!-- Form -->
+                <form id="requestForm" onsubmit="handleFormSubmit(event)" class="p-6 sm:p-8 space-y-6">
+                    <!-- Client Name -->
+                    <div>
+                        <label for="clientName" class="block text-sm font-semibold text-slate-700 mb-2">
+                            Il tuo Nome e Cognome <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-regular fa-user"></i>
+                            </div>
+                            <input type="text" id="clientName" required placeholder="Es. Laura Bianchi"
+                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-800 placeholder-slate-400 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Job Description -->
+                    <div>
+                        <label for="jobDescription" class="block text-sm font-semibold text-slate-700 mb-2">
+                            Descrizione del disegno desiderato <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <textarea id="jobDescription" rows="4" required placeholder="Descrivi l'idea del disegno (es. Ritratto digitale, personaggio anime, stile acquarello, colori preferiti, elementi da includere...)"
+                                class="w-full p-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-800 placeholder-slate-400 text-sm resize-y min-h-[100px]"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Delivery Date -->
+                    <div>
+                        <label for="deliveryDate" class="block text-sm font-semibold text-slate-700 mb-2">
+                            Data di consegna desiderata <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-regular fa-calendar font-normal"></i>
+                            </div>
+                            <input type="date" id="deliveryDate" required
+                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-slate-800 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submitBtn" class="w-full py-3.5 px-6 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-lg shadow-brand-500/30 transition-all transform active:scale-[0.99] flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Invia Prenotazione Disegno</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 2. ADMIN LOGIN MODAL / SECTION -->
+        <section id="adminAuthSection" class="hidden max-w-md mx-auto">
+            <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-100 p-6 sm:p-8">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 mx-auto mb-3">
+                        <i class="fa-solid fa-lock text-xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-900">Accesso Artista</h2>
+                    <p class="text-xs text-slate-500 mt-1">Inserisci la password per visualizzare e gestire le richieste dei disegni.</p>
+                </div>
+
+                <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+                    <div>
+                        <label for="adminPassword" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                        <div class="relative">
+                            <input type="password" id="adminPassword" required placeholder="Inserisci password"
+                                class="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                            <button type="button" onclick="togglePasswordVisibility('adminPassword', 'eyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                                <i id="eyeIcon" class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                        <p id="loginError" class="text-xs text-red-500 mt-1.5 hidden flex items-center gap-1">
+                            <i class="fa-solid fa-circle-exclamation"></i> Password errata. Riprova.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-lg text-xs text-slate-500">
+                        <span class="font-semibold text-slate-600">Nota:</span> La password predefinita è <code class="bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-mono">disegni123</code>.
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm transition-all shadow-md">
+                        Accedi alla Dashboard
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 3. PRIVATE ADMIN DASHBOARD -->
+        <section id="adminDashboardSection" class="hidden space-y-6">
+            <!-- Dashboard Header -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-2xl font-bold text-slate-900">Pannello Prenotazioni Disegni</h2>
+                        <span class="bg-green-100 text-green-700 text-xs px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Artista Collegato
+                        </span>
+                    </div>
+                    <p class="text-sm text-slate-500 mt-0.5">Gestisci le commissioni di disegno ricevute.</p>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <button onclick="openSettingsModal()" class="px-3.5 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-key text-slate-500"></i>
+                        <span>Cambia Password</span>
+                    </button>
+                    <button onclick="handleAdminLogout()" class="px-3.5 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-semibold uppercase text-slate-400">Totale Disegni</span>
+                        <p id="statTotal" class="text-2xl font-bold text-slate-800 mt-0.5">0</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-brand-600 flex items-center justify-center">
+                        <i class="fa-solid fa-paint-brush"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-semibold uppercase text-amber-500">In Attesa</span>
+                        <p id="statPending" class="text-2xl font-bold text-slate-800 mt-0.5">0</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                        <i class="fa-regular fa-clock"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-semibold uppercase text-emerald-500">Completati</span>
+                        <p id="statCompleted" class="text-2xl font-bold text-slate-800 mt-0.5">0</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <i class="fa-regular fa-circle-check"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters & Actions -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
+                <!-- Search -->
+                <div class="relative w-full sm:w-72">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="renderAdminTable()" placeholder="Cerca cliente o disegno..."
+                        class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <!-- Filter Status -->
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <span class="text-xs font-medium text-slate-500 whitespace-nowrap">Stato:</span>
+                    <select id="statusFilter" onchange="renderAdminTable()" class="bg-slate-50 border border-slate-200 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto">
+                        <option value="all">Tutti gli stati</option>
+                        <option value="In attesa">In attesa</option>
+                        <option value="In lavorazione">In lavorazione</option>
+                        <option value="Completato">Completato</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Data Table / List -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                                <th class="py-3.5 px-4">Cliente</th>
+                                <th class="py-3.5 px-4">Descrizione Disegno</th>
+                                <th class="py-3.5 px-4">Consegna Entro</th>
+                                <th class="py-3.5 px-4">Data Richiesta</th>
+                                <th class="py-3.5 px-4">Stato</th>
+                                <th class="py-3.5 px-4 text-right">Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsTableBody" class="divide-y divide-slate-100 text-sm">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden py-12 text-center">
+                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400 mb-3">
+                        <i class="fa-solid fa-palette text-2xl"></i>
+                    </div>
+                    <h3 class="text-slate-700 font-medium text-base">Nessuna prenotazione trovata</h3>
+                    <p class="text-slate-400 text-xs mt-1">Non ci sono prenotazioni di disegni presenti o corrispondenti ai filtri.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Change Password -->
+    <div id="passwordModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 relative animate-in fade-in zoom-in duration-200">
+            <button onclick="closeSettingsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">Modifica Password Admin</h3>
+            <p class="text-xs text-slate-500 mb-4">Imposta una nuova password per proteggere il pannello.</p>
+
+            <form onsubmit="handlePasswordChange(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nuova Password</label>
+                    <input type="password" id="newPassword" required minlength="4"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm transition-all">
+                    Salva Nuova Password
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-out pointer-events-none">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-sm">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span id="toastMessage">Operazione completata!</span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
+            &copy; <span id="year"></span> WorkDesk System. Tutti i diritti riservati.
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Data Keys
+        const STORAGE_KEY_REQUESTS = 'prenotazioni_disegni_data';
+        const STORAGE_KEY_AUTH = 'prenotazioni_disegni_auth';
+        const STORAGE_KEY_PASSWORD = 'prenotazioni_disegni_password';
+
+        // Default Credentials
+        const DEFAULT_PASSWORD = 'disegni123';
+
+        // App State
+        let requests = [];
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('year').textContent = new Date().getFullYear();
+            
+            // Set min date for delivery to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('deliveryDate').min = today;
+
+            // Load Saved Data
+            loadRequestsData();
+            
+            // Check routing based on URL hash or default
+            const hash = window.location.hash.replace('#', '');
+            if (hash === 'admin') {
+                switchTab('admin');
+            } else {
+                switchTab('public');
+            }
+
+            updatePendingBadge();
+        });
+
+        // Tab Switcher Logic
+        function switchTab(tab) {
+            const publicSection = document.getElementById('publicSection');
+            const adminAuthSection = document.getElementById('adminAuthSection');
+            const adminDashboardSection = document.getElementById('adminDashboardSection');
+            const navPublicBtn = document.getElementById('navPublicBtn');
+            const navAdminBtn = document.getElementById('navAdminBtn');
+
+            if (tab === 'public') {
+                window.location.hash = 'public';
+                publicSection.classList.remove('hidden');
+                adminAuthSection.classList.add('hidden');
+                adminDashboardSection.classList.add('hidden');
+
+                navPublicBtn.className = "px-3 py-2 text-sm font-medium rounded-lg transition-colors text-brand-600 bg-brand-50 flex items-center gap-2";
+                navAdminBtn.className = "px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-2";
+            } else {
+                window.location.hash = 'admin';
+                publicSection.classList.add('hidden');
+
+                navPublicBtn.className = "px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-2";
+                navAdminBtn.className = "px-3 py-2 text-sm font-medium rounded-lg transition-colors text-brand-600 bg-brand-50 flex items-center gap-2";
+
+                // Check Admin Auth Status
+                if (isAdminAuthenticated()) {
+                    adminAuthSection.classList.add('hidden');
+                    adminDashboardSection.classList.remove('hidden');
+                    renderAdminTable();
+                } else {
+                    adminAuthSection.classList.remove('hidden');
+                    adminDashboardSection.classList.add('hidden');
+                }
+            }
+        }
+
+        // Data Management (LocalStorage)
+        function loadRequestsData() {
+            const stored = localStorage.getItem(STORAGE_KEY_REQUESTS);
+            if (stored) {
+                try {
+                    requests = JSON.parse(stored);
+                } catch (e) {
+                    requests = [];
+                }
+            } else {
+                // Demo Data
+                requests = [
+                    {
+                        id: 'disegno-' + Date.now() - 10000,
+                        clientName: 'Giulia Bianchi',
+                        jobDescription: 'Ritratto in stile digitale fantasy del mio gatto con uno sfondo stellato.',
+                        deliveryDate: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0],
+                        createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
+                        status: 'In attesa'
+                    }
+                ];
+                saveRequestsData();
+            }
+        }
+
+        function saveRequestsData() {
+            localStorage.setItem(STORAGE_KEY_REQUESTS, JSON.stringify(requests));
+            updatePendingBadge();
+        }
+
+        // Form Submission
+        function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const clientName = document.getElementById('clientName').value.trim();
+            const jobDescription = document.getElementById('jobDescription').value.trim();
+            const deliveryDate = document.getElementById('deliveryDate').value;
+
+            if (!clientName || !jobDescription || !deliveryDate) {
+                showToast('Compila tutti i campi richiesti', 'error');
+                return;
+            }
+
+            const newRequest = {
+                id: 'disegno-' + Date.now(),
+                clientName,
+                jobDescription,
+                deliveryDate,
+                createdAt: new Date().toISOString(),
+                status: 'In attesa'
+            };
+
+            requests.unshift(newRequest);
+            saveRequestsData();
+
+            // Reset Form
+            document.getElementById('requestForm').reset();
+
+            // Notification
+            showToast('Prenotazione disegno inviata con successo!', 'success');
+        }
+
+        // Admin Auth Logic
+        function getStoredPassword() {
+            return localStorage.getItem(STORAGE_KEY_PASSWORD) || DEFAULT_PASSWORD;
+        }
+
+        function isAdminAuthenticated() {
+            return localStorage.getItem(STORAGE_KEY_AUTH) === 'true';
+        }
+
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const passwordInput = document.getElementById('adminPassword').value;
+            const errorMsg = document.getElementById('loginError');
+
+            if (passwordInput === getStoredPassword()) {
+                localStorage.setItem(STORAGE_KEY_AUTH, 'true');
+                errorMsg.classList.add('hidden');
+                document.getElementById('adminPassword').value = '';
+                switchTab('admin');
+                showToast('Accesso completato!', 'success');
+            } else {
+                errorMsg.classList.remove('hidden');
+            }
+        }
+
+        function handleAdminLogout() {
+            localStorage.removeItem(STORAGE_KEY_AUTH);
+            switchTab('admin');
+            showToast('Logout effettuato', 'info');
+        }
+
+        // Render Dashboard Table & Stats
+        function renderAdminTable() {
+            const tbody = document.getElementById('requestsTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            tbody.innerHTML = '';
+
+            // Filter Requests
+            const filtered = requests.filter(req => {
+                const matchesSearch = req.clientName.toLowerCase().includes(searchVal) || 
+                                     req.jobDescription.toLowerCase().includes(searchVal);
+                const matchesStatus = statusFilter === 'all' || req.status === statusFilter;
+                return matchesSearch && matchesStatus;
+            });
+
+            // Update Stats
+            document.getElementById('statTotal').textContent = requests.length;
+            document.getElementById('statPending').textContent = requests.filter(r => r.status === 'In attesa').length;
+            document.getElementById('statCompleted').textContent = requests.filter(r => r.status === 'Completato').length;
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filtered.forEach(req => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition-colors";
+
+                const formattedDelivery = formatDate(req.deliveryDate);
+                const formattedCreated = formatDate(req.createdAt, true);
+
+                // Status Badge Styling
+                let statusBadge = '';
+                if (req.status === 'In attesa') {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700 inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>In attesa</span>`;
+                } else if (req.status === 'In lavorazione') {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>In lavorazione</span>`;
+                } else {
+                    statusBadge = `<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700 inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Completato</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-4 px-4 font-semibold text-slate-800 whitespace-nowrap">
+                        ${escapeHtml(req.clientName)}
+                    </td>
+                    <td class="py-4 px-4 text-slate-600 max-w-xs break-words">
+                        ${escapeHtml(req.jobDescription)}
+                    </td>
+                    <td class="py-4 px-4 text-slate-700 font-medium whitespace-nowrap">
+                        <i class="fa-regular fa-calendar text-slate-400 mr-1.5"></i>${formattedDelivery}
+                    </td>
+                    <td class="py-4 px-4 text-slate-400 text-xs whitespace-nowrap">
+                        ${formattedCreated}
+                    </td>
+                    <td class="py-4 px-4 whitespace-nowrap">
+                        ${statusBadge}
+                    </td>
+                    <td class="py-4 px-4 text-right whitespace-nowrap space-x-1">
+                        <!-- Status Selector -->
+                        <select onchange="updateRequestStatus('${req.id}', this.value)" class="text-xs bg-slate-100 border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500 font-medium text-slate-700">
+                            <option value="In attesa" ${req.status === 'In attesa' ? 'selected' : ''}>In attesa</option>
+                            <option value="In lavorazione" ${req.status === 'In lavorazione' ? 'selected' : ''}>In lavorazione</option>
+                            <option value="Completato" ${req.status === 'Completato' ? 'selected' : ''}>Completato</option>
+                        </select>
+                        <!-- Delete Btn -->
+                        <button onclick="deleteRequest('${req.id}')" title="Elimina Prenotazione" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Update Request Status
+        function updateRequestStatus(id, newStatus) {
+            const index = requests.findIndex(r => r.id === id);
+            if (index !== -1) {
+                requests[index].status = newStatus;
+                saveRequestsData();
+                renderAdminTable();
+                showToast(`Stato aggiornato a "${newStatus}"`, 'info');
+            }
+        }
+
+        // Delete Request
+        function deleteRequest(id) {
+            if (confirm('Sei sicuro di voler eliminare questa richiesta?')) {
+                requests = requests.filter(r => r.id !== id);
+                saveRequestsData();
+                renderAdminTable();
+                showToast('Richiesta eliminata', 'info');
+            }
+        }
+
+        // Settings / Change Password
+        function openSettingsModal() {
+            document.getElementById('passwordModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+            document.getElementById('newPassword').value = '';
+        }
+
+        function handlePasswordChange(event) {
+            event.preventDefault();
+            const newPass = document.getElementById('newPassword').value.trim();
+            if (newPass) {
+                localStorage.setItem(STORAGE_KEY_PASSWORD, newPass);
+                closeSettingsModal();
+                showToast('Password aggiornata con successo!', 'success');
+            }
+        }
+
+        // UI Helpers
+        function updatePendingBadge() {
+            const pendingCount = requests.filter(r => r.status === 'In attesa').length;
+            const badge = document.getElementById('badgePendingCount');
+            if (pendingCount > 0) {
+                badge.textContent = pendingCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-regular fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-regular fa-eye';
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = message;
+
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-lg';
+            } else if (type === 'error') {
+                toastIcon.className = 'fa-solid fa-triangle-exclamation text-red-400 text-lg';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-blue-400 text-lg';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function formatDate(dateString, includeTime = false) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            if (includeTime) {
+                options.hour = '2-digit';
+                options.minute = '2-digit';
+            }
+            return new Intl.DateTimeFormat('it-IT', options).format(date);
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
